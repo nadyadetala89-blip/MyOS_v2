@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MyOS Optimized Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #111;
+            --win-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --taskbar-bg: rgba(0, 0, 0, 0.9);
+        }
+
+        .light-theme {
+            --bg-color: #e0e0e0;
+            --win-bg: #ffffff;
+            --text-color: #1a1a1a;
+            --taskbar-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background: var(--bg-color);
+            font-family: -apple-system, sans-serif;
+            color: var(--text-color); touch-action: none; user-select: none;
+        }
+
+        #wallpaper {
+            position: fixed; inset: 0;
+            background-size: cover; background-position: center;
+            z-index: -1; transition: 0.3s;
+        }
+
+        .desktop { position: relative; width: 100vw; height: calc(100vh - 60px); }
+
+        /* Иконки */
+        .app-icon {
+            position: absolute; width: 80px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 10;
+        }
+        .app-icon img, .app-icon i { font-size: 35px; margin-bottom: 5px; }
+        .app-icon span { font-size: 11px; text-align: center; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.8); color: white; }
+
+        /* Окна */
+        .window {
+            position: absolute; background: var(--win-bg); border-radius: 12px;
+            display: none; flex-direction: column; z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid rgba(128,128,128,0.2);
+            overflow: hidden;
+        }
+        .win-header {
+            height: 45px; background: rgba(128,128,128,0.1); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 15px;
+        }
+        .win-body { flex: 1; position: relative; background: #000; }
+
+        /* Панель задач */
+        .taskbar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+            background: var(--taskbar-bg); display: flex; align-items: center; 
+            padding: 0 15px; z-index: 1000; border-top: 1px solid rgba(128,128,128,0.2);
+        }
+        .fire-emoji { font-size: 30px; cursor: pointer; filter: drop-shadow(0 0 5px orange); }
+
+        .shield { position: absolute; inset: 0; z-index: 500; display: none; }
+
+        /* Настройки: Обои */
+        .wp-thumb { width: 100%; aspect-ratio: 16/9; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
+        .wp-thumb.active { border-color: #3b82f6; }
+    </style>
+</head>
+<body class="dark-theme">
+
+<div id="wallpaper" style="background-image: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000');"></div>
+
+<div class="desktop" id="desktop">
+    <!-- Иконка Google -->
+    <div class="app-icon" id="ic-google" style="top: 20px; left: 20px;" ontouchstart="dragStart(event, 'ic-google')" onclick="openWin('google')">
+        <img src="https://www.google.com/favicon.ico" width="35">
+        <span>Google</span>
+    </div>
+
+    <!-- Иконка Магазина -->
+    <div class="app-icon" id="ic-store" style="top: 20px; left: 110px;" ontouchstart="dragStart(event, 'ic-store')" onclick="openWin('store')">
+        <i class="fas fa-shopping-bag text-orange-500"></i>
+        <span>MyStore</span>
+    </div>
+
+    <!-- Иконка Настроек -->
+    <div class="app-icon" id="ic-settings" style="top: 20px; left: 200px;" ontouchstart="dragStart(event, 'ic-settings')" onclick="openWin('settings')">
+        <i class="fas fa-cog text-gray-400"></i>
+        <span>Настройки</span>
+    </div>
+
+    <!-- Окно Google -->
+    <div id="win-google" class="window" style="width: 90%; height: 80%; top: 5%; left: 5%;">
+        <div class="win-header" ontouchstart="dragStart(event, 'win-google')">
+            <span class="text-sm font-bold">Google Search</span>
+            <div onclick="closeWin('google')" class="p-2"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="win-body">
+            <div class="shield"></div>
+            <iframe src="https://www.google.com/search?igu=1" class="w-full h-full border-none bg-white"></iframe>
+        </div>
+    </div>
+
+    <!-- Окно Магазина -->
+    <div id="win-store" class="window" style="width: 85%; height: 75%; top: 10%; left: 7.5%;">
+        <div class="win-header" ontouchstart="dragStart(event, 'win-store')">
+            <span class="text-sm font-bold">MyStore</span>
+            <div onclick="closeWin('store')" class="p-2"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="win-body p-4 bg-zinc-900 overflow-y-auto" style="background: var(--win-bg)">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-cube text-red-500 text-2xl"></i>
+                        <span class="text-sm">Roblox</span>
+                    </div>
+                    <button onclick="install('Roblox', 'fa-cube', 'text-red-500', 'https://now.gg/apps/roblox/9531/roblox.html')" class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold">УСТАНОВИТЬ</button>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-box text-green-600 text-2xl"></i>
+                        <span class="text-sm">Minecraft</span>
+                    </div>
+                    <button onclick="install('Minecraft', 'fa-box', 'text-green-600', 'https://classic.minecraft.net')" class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold">УСТАНОВИТЬ</button>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-star text-yellow-500 text-2xl"></i>
+                        <span class="text-sm">Brawl Stars</span>
+                    </div>
+                    <button onclick="install('BrawlStars', 'fa-star', 'text-yellow-500', 'https://www.game-game.com/games/17502/')" class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold">УСТАНОВИТЬ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно Настроек -->
+    <div id="win-settings" class="window" style="width: 85%; height: 70%; top: 15%; left: 7.5%;">
+        <div class="win-header" ontouchstart="dragStart(event, 'win-settings')">
+            <span class="text-sm font-bold">Настройки</span>
+            <div onclick="closeWin('settings')" class="p-2"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="win-body p-4 overflow-y-auto" style="background: var(--win-bg)">
+            <p class="text-[10px] font-bold opacity-50 mb-2 uppercase">Персонализация</p>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400" class="wp-thumb active" onclick="setWP(this.src, this)">
+                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400" class="wp-thumb" onclick="setWP(this.src, this)">
+                <img src="https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400" class="wp-thumb" onclick="setWP(this.src, this)">
+                <img src="https://images.unsplash.com/photo-1511447333015-45b65e60f6d1?q=80&w=400" class="wp-thumb" onclick="setWP(this.src, this)">
+            </div>
+
+            <p class="text-[10px] font-bold opacity-50 mb-2 uppercase">Тема</p>
+            <div class="flex gap-2 mb-6">
+                <button onclick="setTheme('dark')" class="flex-1 bg-zinc-800 py-2 rounded-lg text-xs">Темная</button>
+                <button onclick="setTheme('light')" class="flex-1 bg-zinc-200 text-black py-2 rounded-lg text-xs">Светлая</button>
+            </div>
+            
+            <p class="text-[10px] font-bold opacity-50 mb-2 uppercase">Пользователь</p>
+            <input type="text" id="nameIn" oninput="setName(this.value)" placeholder="Твое имя..." class="w-full bg-black/20 p-3 rounded-lg text-sm outline-none border border-white/10">
+        </div>
+    </div>
+
+    <!-- Контейнер для окон игр -->
+    <div id="game-container"></div>
+</div>
+
+<div class="taskbar">
+    <div class="fire-emoji" onclick="openWin('settings')">🔥</div>
+    <div class="ml-6 flex gap-5">
+        <img src="https://www.google.com/favicon.ico" width="24" onclick="openWin('google')">
+        <i class="fas fa-shopping-bag text-xl opacity-70" onclick="openWin('store')"></i>
+    </div>
+    <div class="ml-auto text-right">
+        <div id="time" class="font-bold text-sm">00:00</div>
+        <div id="userName" class="text-[9px] opacity-60">ГОСТЬ</div>
+    </div>
+</div>
+
+<script>
+    let zIdx = 1000;
+    let activeEl = null;
+    let startX, startY, initX, initY;
+    let installs = 0;
+
+    function tick() {
+        const now = new Date();
+        document.getElementById('time').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    }
+    setInterval(tick, 1000); tick();
+
+    function openWin(id) {
+        const w = document.getElementById('win-' + id);
+        if(w) { w.style.display = 'flex'; w.style.zIndex = ++zIdx; }
+    }
+    function closeWin(id) { document.getElementById('win-' + id).style.display = 'none'; }
+
+    function setWP(url, el) {
+        document.getElementById('wallpaper').style.backgroundImage = `url('${url}')`;
+        document.querySelectorAll('.wp-thumb').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function setTheme(t) {
+        document.body.className = t + '-theme';
+    }
+
+    function setName(v) {
+        document.getElementById('userName').innerText = v.toUpperCase() || 'ГОСТЬ';
+    }
+
+    function install(name, icon, color, url) {
+        const id = 'game-' + name.toLowerCase();
+        if(document.getElementById('ic-' + id)) { openWin(id); return; }
+
+        installs++;
+        // Создаем иконку
+        const ic = document.createElement('div');
+        ic.className = 'app-icon';
+        ic.id = 'ic-' + id;
+        ic.style.top = (20 + (installs * 90)) + 'px';
+        ic.style.left = '20px';
+        ic.innerHTML = `<i class="fas ${icon} ${color}"></i><span>${name}</span>`;
+        ic.ontouchstart = (e) => dragStart(e, ic.id);
+        ic.onclick = () => openWin(id);
+        document.getElementById('desktop').appendChild(ic);
+
+        // Создаем окно
+        const win = document.createElement('div');
+        win.id = 'win-' + id;
+        win.className = 'window';
+        win.style.cssText = "width: 100vw; height: calc(100vh - 60px); top: 0; left: 0; border-radius: 0;";
+        win.innerHTML = `
+            <div class="win-header">
+                <span class="text-sm font-bold">${name}</span>
+                <div onclick="closeWin('${id}')" class="p-2"><i class="fas fa-times text-xl"></i></div>
+            </div>
+            <div class="win-body">
+                <div class="shield"></div>
+                <iframe src="${url}" class="w-full h-full border-none bg-white"></iframe>
+            </div>
+        `;
+        document.getElementById('game-container').appendChild(win);
+        alert(name + " установлен на рабочий стол!");
+        openWin(id);
+    }
+
+    // Оптимизированный тач-движок
+    function dragStart(e, id) {
+        if(e.target.closest('.p-2') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        activeEl = document.getElementById(id);
+        activeEl.style.zIndex = ++zIdx;
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY;
+        initX = activeEl.offsetLeft; initY = activeEl.offsetTop;
+        
+        document.querySelectorAll('.shield').forEach(s => s.style.display = 'block');
+        document.addEventListener('touchmove', dragMove, {passive: false});
+        document.addEventListener('touchend', dragEnd);
+    }
+
+    function dragMove(e) {
+        if(!activeEl) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        activeEl.style.left = (initX + (t.clientX - startX)) + 'px';
+        activeEl.style.top = (initY + (t.clientY - startY)) + 'px';
+    }
+
+    function dragEnd() {
+        activeEl = null;
+        document.querySelectorAll('.shield').forEach(s => s.style.display = 'none');
+        document.removeEventListener('touchmove', dragMove);
+    }
+</script>
+
+</body>
+</html>
+
